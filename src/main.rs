@@ -6,10 +6,7 @@ use std::{
 
 use anyhow::Result;
 
-/// 4 Gi
-const BIG_NUMBER: usize = 4 * 1024 * 1024 * 1024;
-
-fn main() -> Result<()> {
+fn _main() -> Result<()> {
     println!("big number: {}", BIG_NUMBER);
 
     print!("busy loop ... ");
@@ -112,4 +109,59 @@ copy (1-byte values) ... 2.41952545s
     - copying seems like it doesn't benefit from the 4-byte speedup (?)
 - Q: I don't understand why writing 0x1234_5678 is faster than writing 0x0000_0000
     - what's going on here?
+*/
+
+/// 4 Gi
+const BIG_NUMBER: usize = 4 * 1024 * 1024 * 1024;
+
+fn main() -> Result<()> {
+    println!("big number: {}", BIG_NUMBER);
+
+    print!("busy loop ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for i in 0..BIG_NUMBER {
+        hint::black_box(i);
+    }
+    println!("{:?}", start.elapsed());
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = vec![0u8; BIG_NUMBER];
+    print!("copy directly ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    output.copy_from_slice(&input);
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = Vec::with_capacity(BIG_NUMBER);
+    let buf_size = 64 * 1024;
+    let mut buf = vec![0u8; buf_size];
+    print!("copy via 64K buffer ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for chunk in input.chunks(buf_size) {
+        buf.copy_from_slice(chunk);
+        output.extend_from_slice(&buf);
+    }
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    Ok(())
+}
+
+/*
+    output:
+big number: 4294967296
+busy loop ... 520.625526ms
+copy directly ... 2.438076909s
+copy via 64K buffer ... 2.175316407s
+
+- incredibly, copying via the buffer seems to actually speed things up!
+- I guess the buffer fits into the CPU's cache (?), and the access is so fast
+  that it can be ignored, compared to the reads/writes of the huge input/output
+  arrays
+- so I guess my concern that we'll be introducing "an extra copy" if we write
+  the compression code a certain way isn't a big deal after all.
 */
