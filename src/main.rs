@@ -329,6 +329,21 @@ Also cool to note that decompress takes only about twice as long as a memcpy.
 
 ---
 
+big number: 1073741824
+busy loop ... 137.632722ms
+memcopy ... 606.813826ms
+compress (rust-snappy) ... 2.571534802s
+decompress (rust-snappy) ... 1.13943591s
+(compressed len: 616777753 -- ratio: 0.5744190448895097)
+compress (my impl) ... 5.148643559s
+decompress (my impl) ... 2.726411081s
+compress (zstd) ... 253.297339ms
+decompress (zstd) ... 441.650149ms
+(zstd compressed len: 154086 -- ratio: 0.00014350377023220062)
+compress (zstd, random input) ... 773.696785ms
+decompress (zstd, random input) ... 524.281855ms
+(zstd random input, compressed len: 1073766409 -- ratio: 1.000022896565497)
+
 Update: woah. Zstd is even faster than a memcpy. Are they using multiple CPUs at
 once? Or maybe it's just that the data is so compressable, so the output buffer
 is basically empty.
