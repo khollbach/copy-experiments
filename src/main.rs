@@ -229,7 +229,11 @@ fn main() -> Result<()> {
     println!("{:?}", start.elapsed());
     hint::black_box(decompressed);
 
-    println!("(compressed len: {})", compressed.len()); // around half
+    println!(
+        "(compressed len: {} -- ratio: {})",
+        compressed.len(),
+        compressed.len() as f64 / input.len() as f64
+    );
 
     print!("compress (my impl) ... ");
     io::stdout().flush()?;
@@ -238,14 +242,59 @@ fn main() -> Result<()> {
     println!("{:?}", start.elapsed());
     hint::black_box(&_compressed);
 
-    let mut decompressed = Vec::with_capacity(BIG_NUMBER);
-    decompressed.resize(BIG_NUMBER, 0);
     print!("decompress (my impl) ... ");
     io::stdout().flush()?;
     let start = Instant::now();
     let decompressed = snippy::decompress(&compressed)?;
     println!("{:?}", start.elapsed());
     hint::black_box(decompressed);
+
+    //
+
+    print!("compress (zstd) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let compressed = zstd::stream::encode_all(input.as_slice(), 0)?;
+    println!("{:?}", start.elapsed());
+    hint::black_box(&compressed);
+
+    print!("decompress (zstd) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let decompressed = zstd::stream::decode_all(compressed.as_slice())?;
+    println!("{:?}", start.elapsed());
+    hint::black_box(decompressed);
+
+    println!(
+        "(zstd compressed len: {} -- ratio: {})",
+        compressed.len(),
+        compressed.len() as f64 / input.len() as f64
+    );
+
+    //
+
+    let mut input = vec![0; BIG_NUMBER];
+    rand::fill(&mut input);
+
+    print!("compress (zstd, random input) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let compressed = zstd::stream::encode_all(input.as_slice(), 0)?;
+    println!("{:?}", start.elapsed());
+    hint::black_box(&compressed);
+
+    print!("decompress (zstd, random input) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let decompressed = zstd::stream::decode_all(compressed.as_slice())?;
+    println!("{:?}", start.elapsed());
+    hint::black_box(decompressed);
+
+    println!(
+        "(zstd random input, compressed len: {} -- ratio: {})",
+        compressed.len(),
+        compressed.len() as f64 / input.len() as f64
+    );
 
     Ok(())
 }
@@ -277,4 +326,11 @@ But why does my decompress impl take more than twice as long?
 
 Also cool to note that decompress takes only about twice as long as a memcpy.
 (And compress about twice as long as that.)
+
+---
+
+Update: woah. Zstd is even faster than a memcpy. Are they using multiple CPUs at
+once? Or maybe it's just that the data is so compressable, so the output buffer
+is basically empty.
+- yeah, based on the random input I tried, that seems pretty reasonable
 */

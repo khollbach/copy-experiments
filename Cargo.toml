@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.102"
+rand = "0.10.1"
 snap = "1.1.1"
 snippy = { version = "0.1.0", path = "../snippy" }
+zstd = "0.13.3"
 #snappy = "0.4.0"
