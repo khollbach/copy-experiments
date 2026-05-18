@@ -1,10 +1,12 @@
 use std::{
+    cmp::min,
     hint,
     io::{self, Write},
     time::Instant,
 };
 
 use anyhow::Result;
+use snap::raw::{self, Decoder, Encoder};
 
 fn _main() -> Result<()> {
     println!("big number: {}", BIG_NUMBER);
@@ -111,10 +113,7 @@ copy (1-byte values) ... 2.41952545s
     - what's going on here?
 */
 
-/// 4 Gi
-const BIG_NUMBER: usize = 4 * 1024 * 1024 * 1024;
-
-fn main() -> Result<()> {
+fn __main() -> Result<()> {
     println!("big number: {}", BIG_NUMBER);
 
     print!("busy loop ... ");
@@ -164,4 +163,118 @@ copy via 64K buffer ... 2.175316407s
   arrays
 - so I guess my concern that we'll be introducing "an extra copy" if we write
   the compression code a certain way isn't a big deal after all.
+*/
+
+/// 1 Gi
+const BIG_NUMBER: usize = 1 * 1024 * 1024 * 1024;
+
+fn main() -> Result<()> {
+    println!("big number: {}", BIG_NUMBER);
+
+    print!("busy loop ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for i in 0..BIG_NUMBER {
+        hint::black_box(i);
+    }
+    println!("{:?}", start.elapsed());
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = vec![0u8; BIG_NUMBER];
+    print!("memcopy ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    output.copy_from_slice(&input);
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    let alice = include_bytes!("../alice29.txt");
+    let mut input = Vec::with_capacity(BIG_NUMBER);
+    while input.len() < BIG_NUMBER {
+        let chunk_len = min(alice.len(), BIG_NUMBER - input.len());
+        input.extend_from_slice(&alice[..chunk_len]);
+    }
+
+    // (Compile error; ignoring for now.)
+    // // let mut compressed = Vec::with_capacity(BIG_NUMBER);
+    // print!("compress (c snappy) ... ");
+    // io::stdout().flush()?;
+    // let start = Instant::now();
+    // let compressed = snappy::compress(&input);
+    // println!("{:?}", start.elapsed());
+    // hint::black_box(compressed);
+    // // let mut decompressed = Vec::with_capacity(BIG_NUMBER);
+    // print!("decompress (c snappy) ... ");
+    // io::stdout().flush()?;
+    // let start = Instant::now();
+    // let decompressed = snappy::decompress(&compressed)?;
+    // println!("{:?}", start.elapsed());
+    // hint::black_box(decompressed);
+
+    print!("compress (rust-snappy) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let mut compressed = vec![0; raw::max_compress_len(input.len())];
+    let len = compress(&input, &mut compressed)?;
+    compressed.truncate(len);
+    println!("{:?}", start.elapsed());
+    hint::black_box(&compressed);
+
+    print!("decompress (rust-snappy) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let mut decompressed = vec![0; input.len()];
+    let len = decompress(&compressed, &mut decompressed)?;
+    decompressed.truncate(len);
+    println!("{:?}", start.elapsed());
+    hint::black_box(decompressed);
+
+    println!("(compressed len: {})", compressed.len()); // around half
+
+    print!("compress (my impl) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let _compressed = snippy::compress(&input);
+    println!("{:?}", start.elapsed());
+    hint::black_box(&_compressed);
+
+    let mut decompressed = Vec::with_capacity(BIG_NUMBER);
+    decompressed.resize(BIG_NUMBER, 0);
+    print!("decompress (my impl) ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    let decompressed = snippy::decompress(&compressed)?;
+    println!("{:?}", start.elapsed());
+    hint::black_box(decompressed);
+
+    Ok(())
+}
+
+fn compress(input: &[u8], output: &mut [u8]) -> Result<usize> {
+    Ok(Encoder::new().compress(input, output)?)
+}
+
+fn decompress(input: &[u8], output: &mut [u8]) -> Result<usize> {
+    Ok(Decoder::new().decompress(input, output)?)
+}
+
+/*
+big number: 1073741824
+busy loop ... 144.225547ms
+memcopy ... 661.194116ms
+compress (rust-snappy) ... 2.511677024s
+decompress (rust-snappy) ... 1.131712414s
+(compressed len: 616777753)
+compress (my impl) ... 5.309834987s
+decompress (my impl) ... 2.66605313s
+
+Ok cool. So my compress impl takes twice as long -- that's fair enough.
+- There's lots we could probably optimize, and I'll declare it "out of scope" for now...
+
+But why does my decompress impl take more than twice as long?
+- I feel like the code is pretty straightforward, so I'm curious what's causing
+  such a big difference!
+
+Also cool to note that decompress takes only about twice as long as a memcpy.
+(And compress about twice as long as that.)
 */
