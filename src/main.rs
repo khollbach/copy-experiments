@@ -165,10 +165,7 @@ copy via 64K buffer ... 2.175316407s
   the compression code a certain way isn't a big deal after all.
 */
 
-/// 1 Gi
-const BIG_NUMBER: usize = 1 * 1024 * 1024 * 1024;
-
-fn main() -> Result<()> {
+fn ___main() -> Result<()> {
     println!("big number: {}", BIG_NUMBER);
 
     print!("busy loop ... ");
@@ -299,10 +296,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[allow(unused)]
 fn compress(input: &[u8], output: &mut [u8]) -> Result<usize> {
     Ok(Encoder::new().compress(input, output)?)
 }
 
+#[allow(unused)]
 fn decompress(input: &[u8], output: &mut [u8]) -> Result<usize> {
     Ok(Decoder::new().decompress(input, output)?)
 }
@@ -348,4 +347,188 @@ Update: woah. Zstd is even faster than a memcpy. Are they using multiple CPUs at
 once? Or maybe it's just that the data is so compressable, so the output buffer
 is basically empty.
 - yeah, based on the random input I tried, that seems pretty reasonable
+*/
+
+/// 1 Gi
+const BIG_NUMBER: usize = 1 * 1024 * 1024 * 1024;
+
+fn main() -> Result<()> {
+    println!("big number: {}", BIG_NUMBER);
+
+    print!("busy loop ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for i in 0..BIG_NUMBER {
+        hint::black_box(i);
+    }
+    println!("{:?}", start.elapsed());
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = vec![0u8; BIG_NUMBER];
+    print!("copy directly ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    output.copy_from_slice(&input);
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = Vec::with_capacity(BIG_NUMBER);
+    let buf_size = 64 * 1024;
+    let mut buf = vec![0u8; buf_size];
+    print!("copy via 64K buffer ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for chunk in input.chunks(buf_size) {
+        buf.copy_from_slice(chunk);
+        output.extend_from_slice(&buf);
+    }
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = Vec::with_capacity(BIG_NUMBER);
+    let buf_size = 1024 * 1024;
+    let mut buf = vec![0u8; buf_size];
+    print!("copy via 1M buffer ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for chunk in input.chunks(buf_size) {
+        buf.copy_from_slice(chunk);
+        output.extend_from_slice(&buf);
+    }
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    // let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    // let mut output = Vec::with_capacity(BIG_NUMBER);
+    // let buf_size = 1024 * 1024;
+    // let mut buf = vec![0u8; buf_size];
+    // print!("copy via 1M buffer (compiler hint) ... ");
+    // io::stdout().flush()?;
+    // let start = Instant::now();
+    // for chunk in input.chunks(buf_size) {
+    //     buf.copy_from_slice(chunk);
+    //     hint::black_box(&mut buf);
+    //     output.extend_from_slice(&buf);
+    // }
+    // println!("{:?}", start.elapsed());
+    // hint::black_box(output);
+
+    // let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    // let mut output = Vec::with_capacity(BIG_NUMBER);
+    // let buf_size = 1024 * 1024;
+    // let mut buf = vec![0u8; buf_size];
+    // print!("copy via 1M buffer (x100) ... ");
+    // io::stdout().flush()?;
+    // let start = Instant::now();
+    // for chunk in input.chunks(buf_size) {
+    //     for _ in 0..100 {
+    //         buf.copy_from_slice(chunk);
+    //         hint::black_box(&mut buf);
+    //     }
+    //     output.extend_from_slice(&buf);
+    // }
+    // println!("{:?}", start.elapsed());
+    // hint::black_box(output);
+
+    // let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    // let mut output = Vec::with_capacity(BIG_NUMBER);
+    // let buf_size = 1024 * 1024;
+    // let mut buf = vec![0u8; buf_size];
+    // print!("copy via 1M buffer (x100, no compiler hint) ... ");
+    // io::stdout().flush()?;
+    // let start = Instant::now();
+    // for chunk in input.chunks(buf_size) {
+    //     for _ in 0..100 {
+    //         buf.copy_from_slice(chunk);
+    //     }
+    //     output.extend_from_slice(&buf);
+    // }
+    // println!("{:?}", start.elapsed());
+    // hint::black_box(output);
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = Vec::with_capacity(BIG_NUMBER);
+    let buf_size = 1024 * 1024 * 1024;
+    let mut buf = vec![0u8; buf_size];
+    print!("copy via 1G buffer ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for chunk in input.chunks(buf_size) {
+        buf.copy_from_slice(chunk);
+        output.extend_from_slice(&buf);
+    }
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = Vec::with_capacity(BIG_NUMBER);
+    let buf_size = 128 * 1024 * 1024;
+    let mut buf = vec![0u8; buf_size];
+    print!("copy via 128M buffer ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for chunk in input.chunks(buf_size) {
+        buf.copy_from_slice(chunk);
+        output.extend_from_slice(&buf);
+    }
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut output = Vec::with_capacity(BIG_NUMBER);
+    let buf_size = 512 * 1024 * 1024;
+    let mut buf = vec![0u8; buf_size];
+    print!("copy via 512M buffer ... ");
+    io::stdout().flush()?;
+    let start = Instant::now();
+    for chunk in input.chunks(buf_size) {
+        buf.copy_from_slice(chunk);
+        output.extend_from_slice(&buf);
+    }
+    println!("{:?}", start.elapsed());
+    hint::black_box(output);
+
+    Ok(())
+}
+
+/*
+big number: 1073741824
+busy loop ... 141.076478ms
+copy directly ... 605.369825ms
+copy via 64K buffer ... 547.794297ms
+copy via 1M buffer ... 554.379524ms
+copy via 1M buffer (compiler hint) ... 556.105905ms
+copy via 1M buffer (x100) ... 2.010763495s
+copy via 1M buffer (x100, no compiler hint) ... 2.01231784s
+copy via 1G buffer ... 1.005363379s
+
+Ok I have no clue how to explain this.
+
+Notes:
+- it seems like the compiler hint isn't needed -- the copy never gets elided anyways
+- why doesn't the 1M copy matter???
+
+---
+
+Update:
+- ok I think it's because the CPU cache is actually 12M (!) -- so if we want the extra copy
+  to hurt performance, it's gotta be a 500M buffer or something
+  (which is *wild* btw -- I feel like 12M is huge)
+
+---
+
+big number: 1073741824
+busy loop ... 137.287248ms
+copy directly ... 616.794728ms
+copy via 64K buffer ... 556.836689ms
+copy via 1M buffer ... 570.050402ms
+copy via 1G buffer ... 1.008327939s
+copy via 128M buffer ... 668.054463ms
+
+Ok but now that we've got a buffer bigger than the cache, yes, it matters. But I was expecting
+it to fully double the runtime, since we're doing two copies.
+- Why does the 512M buffer not have the same perf as the 1G buffer??
+
 */
