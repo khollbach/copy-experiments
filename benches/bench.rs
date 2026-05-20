@@ -1,6 +1,5 @@
 use std::{
     cell::RefCell,
-    hint,
     io::{Cursor, Write},
 };
 
@@ -17,7 +16,7 @@ fn bench(c: &mut Criterion) {
     // let n = 512 * 1024 * 1024; // 512 Mi
 
     // 64 Ki ..
-    for buf_len_log in 16..18 {
+    for buf_len_log in 16.. {
         let buf_len = 1 << buf_len_log;
         if buf_len > n {
             break;
