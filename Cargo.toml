@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.102"
 criterion = { version = "0.8.2", features = ["html_reports"] }
+flate2 = "1.1.9"
 rand = "0.10.1"
 snap = "1.1.1"
 snippy = { version = "0.1.0", path = "../snippy" }
