@@ -372,7 +372,7 @@ fn main() -> Result<()> {
     let start = Instant::now();
     output.copy_from_slice(&input);
     println!("{:?}", start.elapsed());
-    hint::black_box(output);
+    hint::black_box(output); // otherwise the compiler will optimize away the entire copy
 
     let mut output = Vec::with_capacity(BIG_NUMBER);
     let buf_size = 64 * 1024;
