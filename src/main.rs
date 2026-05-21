@@ -363,7 +363,9 @@ fn main() -> Result<()> {
     }
     println!("{:?}", start.elapsed());
 
-    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
+    let mut input = vec![0u8; BIG_NUMBER];
+    rand::fill(&mut input);
+
     let mut output = vec![0u8; BIG_NUMBER];
     print!("copy directly ... ");
     io::stdout().flush()?;
@@ -372,7 +374,6 @@ fn main() -> Result<()> {
     println!("{:?}", start.elapsed());
     hint::black_box(output);
 
-    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
     let mut output = Vec::with_capacity(BIG_NUMBER);
     let buf_size = 64 * 1024;
     let mut buf = vec![0u8; buf_size];
@@ -386,7 +387,6 @@ fn main() -> Result<()> {
     println!("{:?}", start.elapsed());
     hint::black_box(output);
 
-    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
     let mut output = Vec::with_capacity(BIG_NUMBER);
     let buf_size = 1024 * 1024;
     let mut buf = vec![0u8; buf_size];
@@ -448,7 +448,6 @@ fn main() -> Result<()> {
     // println!("{:?}", start.elapsed());
     // hint::black_box(output);
 
-    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
     let mut output = Vec::with_capacity(BIG_NUMBER);
     let buf_size = 1024 * 1024 * 1024;
     let mut buf = vec![0u8; buf_size];
@@ -462,7 +461,6 @@ fn main() -> Result<()> {
     println!("{:?}", start.elapsed());
     hint::black_box(output);
 
-    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
     let mut output = Vec::with_capacity(BIG_NUMBER);
     let buf_size = 128 * 1024 * 1024;
     let mut buf = vec![0u8; buf_size];
@@ -476,7 +474,6 @@ fn main() -> Result<()> {
     println!("{:?}", start.elapsed());
     hint::black_box(output);
 
-    let input = hint::black_box(vec![0u8; BIG_NUMBER]);
     let mut output = Vec::with_capacity(BIG_NUMBER);
     let buf_size = 512 * 1024 * 1024;
     let mut buf = vec![0u8; buf_size];
@@ -519,16 +516,29 @@ Update:
 
 ---
 
+    with zeros as input:
 big number: 1073741824
 busy loop ... 137.287248ms
 copy directly ... 616.794728ms
 copy via 64K buffer ... 556.836689ms
 copy via 1M buffer ... 570.050402ms
-copy via 1G buffer ... 1.008327939s
 copy via 128M buffer ... 668.054463ms
+copy via 1G buffer ... 1.008327939s
 
 Ok but now that we've got a buffer bigger than the cache, yes, it matters. But I was expecting
 it to fully double the runtime, since we're doing two copies.
 - Why does the 512M buffer not have the same perf as the 1G buffer??
+
+---
+
+    with random data as input:
+big number: 1073741824
+busy loop ... 131.321836ms
+copy directly ... 397.512903ms
+copy via 64K buffer ... 491.713598ms
+copy via 1M buffer ... 442.847827ms
+copy via 128M buffer ... 454.907513ms
+copy via 512M buffer ... 605.964879ms
+copy via 1G buffer ... 817.089856ms
 
 */
