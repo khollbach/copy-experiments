@@ -105,7 +105,7 @@ fn compression(c: &mut Criterion) {
 
     let m = 1024 * 1024;
     // for n in [32 * m, 64 * m, 128 * m] {
-    for n in [m] {
+    for n in [16 * m] {
         // let zeros = vec![0; n];
 
         // let mut random = vec![0; n];
@@ -134,8 +134,8 @@ fn compression(c: &mut Criterion) {
             let id = BenchmarkId::new("compress", n);
             g.bench_function(id, |b| b.iter(|| my_compress(&input, &mut output)));
 
-            // let id = BenchmarkId::new("compress_reference_impl", n);
-            // g.bench_function(id, |b| b.iter(|| snap_compress(&input, &mut output)));
+            let id = BenchmarkId::new("compress_reference_impl", n);
+            g.bench_function(id, |b| b.iter(|| snap_compress(&input, &mut output)));
 
             // let id = BenchmarkId::new("decompress", n);
             // g.bench_function(id, |b| {
