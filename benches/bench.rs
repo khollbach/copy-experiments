@@ -122,8 +122,8 @@ fn compression(c: &mut Criterion) {
         for (_input_name, input) in [("text", text)] {
             let mut output = vec![0; n * 2];
 
-            // let id = BenchmarkId::new("memcpy", n);
-            // g.bench_function(id, |b| b.iter(|| copy(&input, &mut output[..n])));
+            let id = BenchmarkId::new("memcpy", n);
+            g.bench_function(id, |b| b.iter(|| copy(&input, &mut output[..n])));
 
             let mut compressed_input = vec![0; n * 2];
             let len = snap::raw::Encoder::new()
@@ -153,7 +153,11 @@ fn compression(c: &mut Criterion) {
 }
 
 fn my_compress(input: &[u8], mut output: &mut [u8]) {
-    // todo: extra copy -- does it matter?
+    // extra copy -- does it matter?
+    // not much!
+    //   - It looks like a memcpy takes about 2% as long as snappy-compress,
+    //     so it's not the end of the world. But would still be worth avoiding
+    //     if we got to caring about that level of performance.
     let buf = snippy::compress(input);
     output.write_all(&buf).unwrap();
 }
