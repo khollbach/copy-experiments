@@ -8,10 +8,9 @@ anyhow = "1.0.102"
 criterion = { version = "0.8.2", features = ["html_reports"] }
 flate2 = "1.1.9"
 rand = "0.10.1"
-snap = "1.1.1"
+snap = { version = "1.1.1", path = "../../tmp/rust/rust-snappy" }
 snippy = { version = "0.1.0", path = "../snippy" }
 zstd = "0.13.3"
-#snappy = "0.4.0"
 
 [[bench]]
 name = "bench"
